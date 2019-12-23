@@ -1,7 +1,5 @@
-#define DIMENSIONS 517
-#define WEIGHTS_DIM 5
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 //! Ising model evolution
@@ -31,9 +29,9 @@ void ising( int *G, double *w, int k, int n){
 		// Make a copy of G as it is when beginning the evolution process
 		memcpy(gPrev, G, n*n*sizeof(int));
 
-		// Iterate for every moment of G (j->X, k->Y axis)
+		// Iterate for every moment of G (j->X, p->Y axis)
 		for(int j = 0; j < n; j++){
-			for(int k = 0; k < n; k++){
+			for(int p = 0; p < n; p++){
 
 				// Reset temporary variable
 				temp = 0;
@@ -50,14 +48,13 @@ void ising( int *G, double *w, int k, int n){
 
 						// Check for negatives
 						indX = ((l-2) + j > 0)?(l-2) + j:n-((l-2) + j);
-						indY = ((m-2) + k > 0)?(m-2) + k:n-((m-2) + k);
+						indY = ((m-2) + p > 0)?(m-2) + k:n-((m-2) + p);
 
 						// Check for over n
 						indX = indX % n;
 						indY = indY % n;
-
 						// Add to temp the weight*value of the original neighbor
-						temp += w[l * n + m] * gPrev[indX * n + indY];
+						temp += w[l * 5 + m] * gPrev[indX * n + indY];
 
 					}
 				}
@@ -65,9 +62,9 @@ void ising( int *G, double *w, int k, int n){
 				// Decide on what future moment should be based on temp:
 				// If positive, set to 1. If negative, to -1. If 0, leave untouched
 				if(temp > 0)
-					G[i * n + k] = 1;
+					G[i * n + p] = 1;
 				if(temp < 0)
-					G[i * n + k] = 1;
+					G[i * n + p] = -1;
 
 			}
 		}
@@ -79,28 +76,30 @@ void ising( int *G, double *w, int k, int n){
 int main(){
 
 	// Set dimensions and number of iterations
-	int n = DIMENSIONS;	int k = 1;
+	int n = 571;	int k = 1;
 
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
-    int G[DIMENSIONS][DIMENSIONS];
+    printf("Pointer created\n");
+    int *G = calloc(n*n, sizeof(int));
+    printf("G allocated\n");
     if (fptr == NULL){
         printf("Error! opening file");
         // Program exits if the file pointer returns NULL.
         exit(1);
     }
-    fread(&G, sizeof(int), DIMENSIONS*DIMENSIONS, fptr);
+
+    fread(&G, sizeof(int), n*n, fptr);
 
     // Define weights array
-    double weights = {
-    		{0.004, 0.016, 0.026, 0.016, 0.004},
-    		{0.016, 0.071, 0.117, 0.071, 0.016},
-    		{0.026, 0.117, 0, 0.117, 0.026},
-    		{0.016, 0.071, 0.117, 0.071, 0.016},
-    		{0.004, 0.016, 0.026, 0.016, 0.004}
-    };
+    double weights[] = {0.004, 0.016, 0.026, 0.016, 0.004,
+    		0.016, 0.071, 0.117, 0.071, 0.016,
+			0.026, 0.117, 0, 0.117, 0.026,
+			0.016, 0.071, 0.117, 0.071, 0.016,
+			0.004, 0.016, 0.026, 0.016, 0.004};
 
-    // Call
+    // Call ising
+    ising(G, weights, k, n);
 
     // Close binary file
     fclose(fptr);
@@ -108,3 +107,4 @@ int main(){
 
     return 0;
 }
+
