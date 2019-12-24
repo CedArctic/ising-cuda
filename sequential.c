@@ -25,7 +25,7 @@ void printResult(int *G, int n){
 
 void ising( int *G, double *w, int k, int n){
 
-	// Array to hold local copy of G to freely modify the original
+// Array to hold local copy of G to freely modify the original
 	int *gPrev = calloc(n*n, sizeof(int));
 
 	// Temporary variable to decide what value a moment will take
@@ -40,32 +40,32 @@ void ising( int *G, double *w, int k, int n){
 		// Make a copy of G as it is when beginning the evolution process
 		memcpy(gPrev, G, n*n*sizeof(int));
 
-		// Iterate for every moment of G (j->X, p->Y axis)
+		// Iterate for every moment of G (j->Y, p->X axis)
 		for(int j = 0; j < n; j++){
 			for(int p = 0; p < n; p++){
 
 				// Reset temporary variable
 				temp = 0;
 
-				// Iterate through the moment's 5x5 neighborhood (l->X, m->Y axis)
+				// Iterate through the moment's 5x5 neighborhood (l->Y, m->X axis)
 				for(int l = 0; l < 5; l++){
 					for(int m = 0; m < 5; m++){
 
 						// Skip examining the point itself
-						if((l == 2) && (m == 2))
+						if((l == 3) && (m==3))
 							continue;
 
 						// Decide wrap-around neighbor indexes - 2 is subtracted to center the neighbors grid on the moment
 
 						// Check for negatives
-						indX = ((l-2) + j >= 0)?(l-2) + j:n-((l-2) + j);
-						indY = ((m-2) + p >= 0)?(m-2) + k:n-((m-2) + p);
+						indY = ((l-2) + j >= 0)?((l-2) + j) : (n + ((l-2) + j));
+						indX = ((m-2) + p >= 0)?((m-2) + p) : (n + ((m-2) + p));
 
 						// Check for over n
 						indX = indX % n;
 						indY = indY % n;
 						// Add to temp the weight*value of the original neighbor
-						temp += w[l * 5 + m] * gPrev[indX * n + indY];
+						temp += w[l * 5 + m] * gPrev[indY * n + indX];
 
 					}
 				}
@@ -74,7 +74,7 @@ void ising( int *G, double *w, int k, int n){
 				// If positive, set to 1. If negative, to -1. If 0, leave untouched
 				if(temp > 0)
 					G[j * n + p] = 1;
-				if(temp < 0)
+				else if(temp < 0)
 					G[j * n + p] = -1;
 
 			}
@@ -87,7 +87,7 @@ void ising( int *G, double *w, int k, int n){
 int main(){
 
 	// Set dimensions and number of iterations
-	int n = 571;	int k = 1;
+	int n = 517;	int k = 1;
 
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
@@ -100,7 +100,7 @@ int main(){
         exit(1);
     }
 
-    fread(&G, sizeof(int), n*n, fptr);
+    fread(G, sizeof(int), n*n, fptr);
 
     // Define weights array
     double weights[] = {0.004, 0.016, 0.026, 0.016, 0.004,
