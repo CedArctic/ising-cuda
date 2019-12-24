@@ -52,7 +52,7 @@ void ising( int *G, double *w, int k, int n){
 					for(int m = 0; m < 5; m++){
 
 						// Skip examining the point itself
-						if((l == 3) && (m==3))
+						if((l == 2) && (m == 2))
 							continue;
 
 						// Decide wrap-around neighbor indexes - 2 is subtracted to center the neighbors grid on the moment
