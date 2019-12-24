@@ -12,6 +12,17 @@
 
   NOTE: Both matrices G and w are stored in row-major format.
 */
+
+void printResult(int *G, int n){
+    for(int i = 0; i < n; i++){
+        for(int j = 0; j < n; j++){
+            printf("%d ", G[i*n+j]);
+        }
+        printf("\n");
+    }
+
+}
+
 void ising( int *G, double *w, int k, int n){
 
 	// Array to hold local copy of G to freely modify the original
@@ -62,9 +73,9 @@ void ising( int *G, double *w, int k, int n){
 				// Decide on what future moment should be based on temp:
 				// If positive, set to 1. If negative, to -1. If 0, leave untouched
 				if(temp > 0)
-					G[i * n + p] = 1;
+					G[j * n + p] = 1;
 				if(temp < 0)
-					G[i * n + p] = -1;
+					G[j * n + p] = -1;
 
 			}
 		}
