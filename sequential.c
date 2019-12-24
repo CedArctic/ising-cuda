@@ -47,8 +47,8 @@ void ising( int *G, double *w, int k, int n){
 						// Decide wrap-around neighbor indexes - 2 is subtracted to center the neighbors grid on the moment
 
 						// Check for negatives
-						indX = ((l-2) + j > 0)?(l-2) + j:n-((l-2) + j);
-						indY = ((m-2) + p > 0)?(m-2) + k:n-((m-2) + p);
+						indX = ((l-2) + j >= 0)?(l-2) + j:n-((l-2) + j);
+						indY = ((m-2) + p >= 0)?(m-2) + k:n-((m-2) + p);
 
 						// Check for over n
 						indX = indX % n;
