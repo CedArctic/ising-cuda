@@ -24,8 +24,8 @@ void printResult(int *G, int n){
 }
 
 void ising( int *G, double *w, int k, int n){
-
-// Array to hold local copy of G to freely modify the original
+	
+	// Array to hold local copy of G to freely modify the original
 	int *gPrev = calloc(n*n, sizeof(int));
 
 	// Temporary variable to decide what value a moment will take
@@ -52,7 +52,7 @@ void ising( int *G, double *w, int k, int n){
 					for(int m = 0; m < 5; m++){
 
 						// Skip examining the point itself
-						if((l == 3) && (m==3))
+						if((l == 2) && (m == 2))
 							continue;
 
 						// Decide wrap-around neighbor indexes - 2 is subtracted to center the neighbors grid on the moment
@@ -72,16 +72,17 @@ void ising( int *G, double *w, int k, int n){
 
 				// Decide on what future moment should be based on temp:
 				// If positive, set to 1. If negative, to -1. If 0, leave untouched
-				if(temp > 0)
+				if(temp > 0.0001)
 					G[j * n + p] = 1;
-				else if(temp < 0)
+				else if(temp < -0.0001)
 					G[j * n + p] = -1;
+                		else
+                    			G[j * n + p] = G[j * n + p];
 
 			}
 		}
 
 	}
-
 }
 
 int main(){
