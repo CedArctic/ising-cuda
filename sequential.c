@@ -56,14 +56,10 @@ void ising( int *G, double *w, int k, int n){
 							continue;
 
 						// Decide wrap-around neighbor indexes - 2 is subtracted to center the neighbors grid on the moment
-
-						// Check for negatives
-						indY = ((l-2) + j >= 0)?((l-2) + j) : (n + ((l-2) + j));
-						indX = ((m-2) + p >= 0)?((m-2) + p) : (n + ((m-2) + p));
-
-						// Check for over n
-						indX = indX % n;
-						indY = indY % n;
+						// Check for negatives (underflow) and positives over n (overflow)
+						indY = ((l-2) + j + n) % n;
+						indX = ((m-2) + p + n) % n;
+						
 						// Add to temp the weight*value of the original neighbor
 						temp += w[l * 5 + m] * gPrev[indY * n + indX];
 
