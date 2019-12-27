@@ -34,9 +34,6 @@ void ising( int *G, double *w, int k, int n){
 	// Sum variable to decide what value a moment will take
 	double weightSum = 0;
 
-	// Variables to hold final indices when examining each moment
-	int indX, indY;
-
 	// Iterate the number of desired times
 	for(int i = 0; i < k; i++){
 
@@ -47,24 +44,31 @@ void ising( int *G, double *w, int k, int n){
 				// Reset temporary variable
 				weightSum = 0;
 
-				// Iterate through the moment's 5x5 neighborhood (l->Y, m->X axis)
-				for(int l = 0; l < 5; l++){
-					for(int m = 0; m < 5; m++){
-
-						// Skip examining the point itself
-						if((l == 2) && (m == 2))
-							continue;
-
-						// Decide wrap-around neighbor indexes - 2 is subtracted to center the neighbors grid on the moment
-						// Check for negatives (underflow) and positives over n (overflow)
-						indY = ((l-2) + j + n) % n;
-						indX = ((m-2) + p + n) % n;
-						
-						// Add to temp the weight*value of the original neighbor
-						weightSum += w[l * 5 + m] * G[indY * n + indX];
-
-					}
-				}
+				// Unrolled weights calculations for this moment
+				weightSum += w[0] * G[((-2 + j + n) % n) * n + (-2 + p + n) % n];
+				weightSum += w[1] * G[((-2 + j + n) % n) * n + (-1 + p + n) % n];
+				weightSum += w[2] * G[((-2 + j + n) % n) * n + (p + n) % n];
+				weightSum += w[3] * G[((-2 + j + n) % n) * n + (1 + p + n) % n];
+				weightSum += w[4] * G[((-2 + j + n) % n) * n + (2 + p + n) % n];
+				weightSum += w[5] * G[((-1 + j + n) % n) * n + (-2 + p + n) % n];
+				weightSum += w[6] * G[((-1 + j + n) % n) * n + (-1 + p + n) % n];
+				weightSum += w[7] * G[((-1 + j + n) % n) * n + (p + n) % n];
+				weightSum += w[8] * G[((-1 + j + n) % n) * n + (1 + p + n) % n];
+				weightSum += w[9] * G[((-1 + j + n) % n) * n + (2 + p + n) % n];
+				weightSum += w[10] * G[((j + n) % n) * n + (-2 + p + n) % n];
+				weightSum += w[11] * G[((j + n) % n) * n + (-1 + p + n) % n];
+				weightSum += w[13] * G[((j + n) % n) * n + (1 + p + n) % n];
+				weightSum += w[14] * G[((j + n) % n) * n + (2 + p + n) % n];
+				weightSum += w[15] * G[((1 + j + n) % n) * n + (-2 + p + n) % n];
+				weightSum += w[16] * G[((1 + j + n) % n) * n + (-1 + p + n) % n];
+				weightSum += w[17] * G[((1 + j + n) % n) * n + (p + n) % n];
+				weightSum += w[18] * G[((1 + j + n) % n) * n + (1 + p + n) % n];
+				weightSum += w[19] * G[((1 + j + n) % n) * n + (2 + p + n) % n];
+				weightSum += w[20] * G[((2 + j + n) % n) * n + (-2 + p + n) % n];
+				weightSum += w[21] * G[((2 + j + n) % n) * n + (-1 + p + n) % n];
+				weightSum += w[22] * G[((2 + j + n) % n) * n + (p + n) % n];
+				weightSum += w[23] * G[((2 + j + n) % n) * n + (1 + p + n) % n];
+				weightSum += w[24] * G[((2 + j + n) % n) * n + (2 + p + n) % n];
 
 				// Decide on what future moment should be based on temp:
 				// If positive, set to 1. If negative, to -1. If 0, leave untouched
@@ -74,7 +78,6 @@ void ising( int *G, double *w, int k, int n){
 					gTemp[j * n + p] = -1;
 				else
 					gTemp[j * n + p] = G[j * n + p];
-
 			}
 		}
 
