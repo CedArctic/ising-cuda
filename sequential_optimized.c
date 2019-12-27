@@ -34,51 +34,54 @@ void ising( int *G, double *w, int k, int n){
 	// Sum variable to decide what value a moment will take
 	double weightSum = 0;
 
+	int j,p;
+
 	// Iterate the number of desired times
 	for(int i = 0; i < k; i++){
 
 		// Iterate for every moment of G (j->Y, p->X axis)
-		for(int j = 0; j < n; j++){
-			for(int p = 0; p < n; p++){
+		for(int f = 0; f < n*n; f++){
 
-				// Reset temporary variable
-				weightSum = 0;
+			p = f % n;
+			j = f / n;
 
-				// Unrolled weights calculations for this moment
-				weightSum += w[0] * G[((-2 + j + n) % n) * n + (-2 + p + n) % n];
-				weightSum += w[1] * G[((-2 + j + n) % n) * n + (-1 + p + n) % n];
-				weightSum += w[2] * G[((-2 + j + n) % n) * n + (p + n) % n];
-				weightSum += w[3] * G[((-2 + j + n) % n) * n + (1 + p + n) % n];
-				weightSum += w[4] * G[((-2 + j + n) % n) * n + (2 + p + n) % n];
-				weightSum += w[5] * G[((-1 + j + n) % n) * n + (-2 + p + n) % n];
-				weightSum += w[6] * G[((-1 + j + n) % n) * n + (-1 + p + n) % n];
-				weightSum += w[7] * G[((-1 + j + n) % n) * n + (p + n) % n];
-				weightSum += w[8] * G[((-1 + j + n) % n) * n + (1 + p + n) % n];
-				weightSum += w[9] * G[((-1 + j + n) % n) * n + (2 + p + n) % n];
-				weightSum += w[10] * G[((j + n) % n) * n + (-2 + p + n) % n];
-				weightSum += w[11] * G[((j + n) % n) * n + (-1 + p + n) % n];
-				weightSum += w[13] * G[((j + n) % n) * n + (1 + p + n) % n];
-				weightSum += w[14] * G[((j + n) % n) * n + (2 + p + n) % n];
-				weightSum += w[15] * G[((1 + j + n) % n) * n + (-2 + p + n) % n];
-				weightSum += w[16] * G[((1 + j + n) % n) * n + (-1 + p + n) % n];
-				weightSum += w[17] * G[((1 + j + n) % n) * n + (p + n) % n];
-				weightSum += w[18] * G[((1 + j + n) % n) * n + (1 + p + n) % n];
-				weightSum += w[19] * G[((1 + j + n) % n) * n + (2 + p + n) % n];
-				weightSum += w[20] * G[((2 + j + n) % n) * n + (-2 + p + n) % n];
-				weightSum += w[21] * G[((2 + j + n) % n) * n + (-1 + p + n) % n];
-				weightSum += w[22] * G[((2 + j + n) % n) * n + (p + n) % n];
-				weightSum += w[23] * G[((2 + j + n) % n) * n + (1 + p + n) % n];
-				weightSum += w[24] * G[((2 + j + n) % n) * n + (2 + p + n) % n];
+			// Reset temporary variable
+			weightSum = 0;
 
-				// Decide on what future moment should be based on temp:
-				// If positive, set to 1. If negative, to -1. If 0, leave untouched
-				if(weightSum > 0.0001)
-					gTemp[j * n + p] = 1;
-				else if(weightSum < -0.0001)
-					gTemp[j * n + p] = -1;
-				else
-					gTemp[j * n + p] = G[j * n + p];
-			}
+			// Unrolled weights calculations for this moment
+			weightSum += w[0] * G[((-2 + j + n) % n) * n + (-2 + p + n) % n];
+			weightSum += w[1] * G[((-2 + j + n) % n) * n + (-1 + p + n) % n];
+			weightSum += w[2] * G[((-2 + j + n) % n) * n + (p + n) % n];
+			weightSum += w[3] * G[((-2 + j + n) % n) * n + (1 + p + n) % n];
+			weightSum += w[4] * G[((-2 + j + n) % n) * n + (2 + p + n) % n];
+			weightSum += w[5] * G[((-1 + j + n) % n) * n + (-2 + p + n) % n];
+			weightSum += w[6] * G[((-1 + j + n) % n) * n + (-1 + p + n) % n];
+			weightSum += w[7] * G[((-1 + j + n) % n) * n + (p + n) % n];
+			weightSum += w[8] * G[((-1 + j + n) % n) * n + (1 + p + n) % n];
+			weightSum += w[9] * G[((-1 + j + n) % n) * n + (2 + p + n) % n];
+			weightSum += w[10] * G[((j + n) % n) * n + (-2 + p + n) % n];
+			weightSum += w[11] * G[((j + n) % n) * n + (-1 + p + n) % n];
+			weightSum += w[13] * G[((j + n) % n) * n + (1 + p + n) % n];
+			weightSum += w[14] * G[((j + n) % n) * n + (2 + p + n) % n];
+			weightSum += w[15] * G[((1 + j + n) % n) * n + (-2 + p + n) % n];
+			weightSum += w[16] * G[((1 + j + n) % n) * n + (-1 + p + n) % n];
+			weightSum += w[17] * G[((1 + j + n) % n) * n + (p + n) % n];
+			weightSum += w[18] * G[((1 + j + n) % n) * n + (1 + p + n) % n];
+			weightSum += w[19] * G[((1 + j + n) % n) * n + (2 + p + n) % n];
+			weightSum += w[20] * G[((2 + j + n) % n) * n + (-2 + p + n) % n];
+			weightSum += w[21] * G[((2 + j + n) % n) * n + (-1 + p + n) % n];
+			weightSum += w[22] * G[((2 + j + n) % n) * n + (p + n) % n];
+			weightSum += w[23] * G[((2 + j + n) % n) * n + (1 + p + n) % n];
+			weightSum += w[24] * G[((2 + j + n) % n) * n + (2 + p + n) % n];
+
+			// Decide on what future moment should be based on temp:
+			// If positive, set to 1. If negative, to -1. If 0, leave untouched
+			if(weightSum > 0.0001)
+				gTemp[j * n + p] = 1;
+			else if(weightSum < -0.0001)
+				gTemp[j * n + p] = -1;
+			else
+				gTemp[j * n + p] = G[j * n + p];
 		}
 
 		// Swap G and gTemp pointers for next iteration to avoid copying data on every iteration
