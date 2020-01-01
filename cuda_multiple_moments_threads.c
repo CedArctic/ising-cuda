@@ -33,15 +33,18 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     // Sum variable to decide what value a moment will take
     int weightSum;
 
+    // Calculate thread_id
+    int thread_id = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int thread_id = blockIdx.x * BLOCK_SIZE + threadIdx.x; thread_id < BLOCK_SIZE; thread_id += BLOCK_SIZE * GRID_SIZE){
+        for (int i = thread_id; i < thread_id + BLOCK_SIZE * BLOCK_SIZE * GRID_SIZE ; i += BLOCK_SIZE * GRID_SIZE){
             
             // Calculate moment's coordinates (j->Y, p->X axis)
-	        p = thread_id % n;
-	        j = thread_id / n;
+	        p = i % n;
+	        j = i / n;
 
             // Reset weightSum for new moment
             weightSum = 0;
@@ -124,7 +127,7 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<dimGrid, dimBlock>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<dimGrid, BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaThreadSynchronize();
