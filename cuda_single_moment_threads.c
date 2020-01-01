@@ -24,15 +24,15 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	// Calculate thread id
 	int thread_id = blockIdx.x * BLOCK_SIZE + threadIdx.x;
 
-	// Moment's coordinates (j->Y, p->X axis)
+	// Moment's coordinates (j->Y, p->X axis) - perform once and save since they are costly
 	int p = thread_id % n;
 	int j = thread_id / n;
+	
+	// Sum variable to decide what value a moment will take
+	int weightSum = 0;
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
-
-		// Sum variable to decide what value a moment will take
-		int weightSum = 0;
 
 		// Unrolled weights calculations for this moment
 		weightSum += gpu_w[0] * gpu_G[((-2 + j + n) % n) * n + (-2 + p + n) % n];
