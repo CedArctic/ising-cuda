@@ -13,7 +13,8 @@
   NOTE: Both matrices G and w are stored in row-major format.
 */
 
-void printResult(int *G, int n){
+// Function to print out the moments matrix
+void printMoments(int *G, int n){
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
             printf("%d ", G[i*n+j]);
@@ -104,18 +105,16 @@ int main(){
 	// Set dimensions and number of iterations
 	int n = 517;	int k = 1;
 
-	// Open binary file and write contents to an array
+	// Open binary file, write contents to an array and close it
     FILE *fptr = fopen("conf-init.bin","rb");
-    printf("Pointer created\n");
-    int *G = calloc(n*n, sizeof(int));
-    printf("G allocated\n");
     if (fptr == NULL){
-        printf("Error! opening file");
-        // Program exits if the file pointer returns NULL.
+        printf("Error opening file");
+        // Program exits if the file pointer returnscalloc(n*n, sizeof(int)); NULL.
         exit(1);
     }
-
+	int *G = calloc(n*n, sizeof(int));
     fread(G, sizeof(int), n*n, fptr);
+    fclose(fptr);
 
     // Define weights array
     double weights[] = {0.004, 0.016, 0.026, 0.016, 0.004,
@@ -127,9 +126,32 @@ int main(){
     // Call ising
     ising(G, weights, k, n);
 
-    // Close binary file
-    fclose(fptr);
-    printf("Done");
+	// Check results by comparing with ready data
+
+	// Check for k = 1
+	int *expected = calloc(n*n, sizeof(int));
+	fptr = fopen("conf-1.bin","rb");
+	fread(expected, sizeof(int), n*n, fptr);
+	fclose(fptr);
+	for(int v = 0; v < n*n; v++)
+		if(expected[v] != G[v])
+			printf("Error on test k=1\n");
+		
+	// Check for k = 4
+	fptr = fopen("conf-4.bin","rb");
+	fread(expected, sizeof(int), n*n, fptr);
+	fclose(fptr);
+	for(int v = 0; v < n*n; v++)
+		if(expected[v] != G[v])
+			printf("Error on test k=4\n");
+	
+	// Check for k = 11
+	fptr = fopen("conf-11.bin","rb");
+	fread(expected, sizeof(int), n*n, fptr);
+	fclose(fptr);
+	for(int v = 0; v < n*n; v++)
+		if(expected[v] != G[v])
+			printf("Error on test k=11\n");
 
     return 0;
 }
