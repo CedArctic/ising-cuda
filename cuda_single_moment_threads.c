@@ -29,7 +29,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	int j = thread_id / n;
 	
 	// Sum variable to decide what value a moment will take
-	int weightSum = 0;
+	double weightSum = 0;
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
@@ -114,7 +114,7 @@ void ising( int *G, double *w, int k, int n){
 		cudaKernel<<<dimGrid, dimBlock>>>(n, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 
 		// Swap gpu_G and gpu_gTemp pointers for next iteration to avoid copying data on every iteration
 		gpu_swapPtr = gpu_G;
@@ -144,7 +144,7 @@ int main(){
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
     printf("Pointer created\n");
-    int *G = calloc(n*n, sizeof(int));
+    int *G = (int*)scalloc(n*n, sizeof(int));
     printf("G allocated\n");
     if (fptr == NULL){
         printf("Error! opening file");

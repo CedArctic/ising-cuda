@@ -1,7 +1,7 @@
 // Block size axis (BLOCK_SIZE^2 = number of threads per block)
-#define BLOCK_SIZE 11
+#define BLOCK_SIZE 47
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
-#define GRID_SIZE 47
+#define GRID_SIZE 11
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,10 +18,15 @@
   NOTE: Both matrices G and w are stored in row-major format.
 */
 
-/* TODO: Spawn 11 threads per block (not 121 as before), each one taking on 11 moments ie
+/* Version 1: Spawn 11 threads per block (not 121 as before), each one taking on 11 moments ie
     thread k takes on moments k, k+11, k+22, ... (11 if we are refering within the block, 
     517 = 47 * 11 = BLOCK_SIZE * GRID_SIZE for matrix G)
     For V2 cache the whole block before starting ops
+*/
+
+/* Version 2:
+    11x11 grid with 47x47 blocks each spawning 47*2=94 threads. 10 such resident blocks 
+    can fit on a single SM (6 if we used shared memory caching due to memory limitations).
 */
 
 // Cuda kernel function used to calculate one moment per thread
@@ -31,7 +36,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	int p,j;
 
     // Sum variable to decide what value a moment will take
-    int weightSum;
+    double weightSum;
 
     // Calculate thread_id
     int thread_id = blockIdx.x * BLOCK_SIZE + threadIdx.x;
@@ -40,7 +45,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; i < thread_id + BLOCK_SIZE * BLOCK_SIZE * GRID_SIZE ; i += BLOCK_SIZE * GRID_SIZE){
+        for (int i = thread_id; i < thread_id + BLOCK_SIZE * BLOCK_SIZE * GRID_SIZE ; i += BLOCK_SIZE * GRID_SIZE * 2){
             
             // Calculate moment's coordinates (j->Y, p->X axis)
 	        p = i % n;
@@ -127,10 +132,10 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<dimGrid, BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<dimGrid, BLOCK_SIZE*2>>>(n, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
-		cudaThreadSynchronize();
+		cudaDevicesSynchronize();
 
 		// Swap gpu_G and gpu_gTemp pointers for next iteration to avoid copying data on every iteration
 		gpu_swapPtr = gpu_G;
@@ -160,7 +165,7 @@ int main(){
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
     printf("Pointer created\n");
-    int *G = calloc(n*n, sizeof(int));
+    int *G = (int*)calloc(n*n, sizeof(int));
     printf("G allocated\n");
     if (fptr == NULL){
         printf("Error! opening file");
