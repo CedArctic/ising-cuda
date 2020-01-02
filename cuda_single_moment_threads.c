@@ -123,13 +123,7 @@ void ising( int *G, double *w, int k, int n){
 	}
 
 	// Copy final data to CPU memory
-	// If k is odd, due to pointer swapping on the GPU, current data is pointed to by gpu_G
-	if(k % 2 == 1)
-		cudaMemcpy(G, gpu_G, n*n*sizeof(int), cudaMemcpyDeviceToHost);
-	// If k is even, current data is pointed to by gpu_gTemp
-	else
-		cudaMemcpy(G, gpu_gTemp, n*n*sizeof(int), cudaMemcpyDeviceToHost);
-
+	cudaMemcpy(G, gpu_G, n*n*sizeof(int), cudaMemcpyDeviceToHost);
 	// Free memory
 	//cudaFree(gpu_G);
 	//cudaFree(gpu_gTemp);
