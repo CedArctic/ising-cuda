@@ -39,7 +39,9 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     double weightSum;
 
     // Calculate thread_id
-    int thread_id = ((blockIdx.x % GRID_SIZE) * BLOCK_SIZE) + (blockIdx.x / GRID_SIZE) * BLOCK_SIZE * GRID_SIZE + threadIdx.x;
+    int blockX = blockIdx.x % GRID_SIZE;
+    int blockY = blockIdx.x / GRID_SIZE;
+    int thread_id = blockX * BLOCK_SIZE + blockY * BLOCK_SIZE * GRID_SIZE * BLOCK_SIZE + threadIdx.x;
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
