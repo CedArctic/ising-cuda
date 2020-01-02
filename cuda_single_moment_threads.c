@@ -103,15 +103,15 @@ void ising( int *G, double *w, int k, int n){
 	// Temporary pointer used for swapping gpu_G and gpu_gTemp
 	int *gpu_swapPtr;
 
-	// Define grid and block dimensions
-	dim3 dimGrid(GRID_SIZE, GRID_SIZE);
-	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+	// Define grid and block dimensions - disabled for now
+	//dim3 dimGrid(GRID_SIZE, GRID_SIZE);
+	//dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
 	// Iterate the number of desired times
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<dimGrid, dimBlock>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<GRID_SIZE*GRID_SIZE, BLOCK_SIZE*BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaDeviceSynchronize();

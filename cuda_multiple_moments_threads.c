@@ -124,8 +124,8 @@ void ising( int *G, double *w, int k, int n){
 	// Temporary pointer used for swapping gpu_G and gpu_gTemp
 	int *gpu_swapPtr;
 
-	// Define grid and block dimensions
-	dim3 dimGrid(GRID_SIZE, GRID_SIZE);
+	// Define grid and block dimensions - avoid using dim objects for now
+	//dim3 dimGrid(GRID_SIZE, GRID_SIZE);
 	//dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
 	// Iterate the number of desired times
