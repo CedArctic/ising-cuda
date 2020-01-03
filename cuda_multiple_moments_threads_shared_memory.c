@@ -34,7 +34,7 @@
 */
 
 // Shared block memory for caching moments (size = (47+4) ^ 2)
-__shared__ double gpu_G_sh[CACHE_SIZE];
+__shared__ int gpu_G_sh[CACHE_SIZE];
 
 // Cuda kernel function used to calculate one moment per thread
 __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
