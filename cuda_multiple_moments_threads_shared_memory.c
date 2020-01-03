@@ -61,8 +61,8 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
         sh_y = sh_index / CACHE_LINE;
 
         // Calculate coordinates on G based on the shared memory coordinates
-        p = (sh_x - 2 + n) % n;
-        j = (sh_y - 2 + n) % n;
+        p = (sh_x - 2 + blockX * BLOCK_SIZE + n) % n;
+        j = (sh_y - 2 + blockY * BLOCK_SIZE + n) % n;
         g_id = j * n + p;
 
         gpu_G_sh[sh_index] = gpu_G[g_idx];
