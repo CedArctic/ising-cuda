@@ -116,6 +116,10 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
             weightSum += gpu_w[23] * gpu_G_sh[(2 + j) * CACHE_LINE + (1 + p)];
             weightSum += gpu_w[24] * gpu_G_sh[(2 + j) * CACHE_LINE + (2 + p)];
 
+            // Reset moment coordinates from relative to G for writing results
+	        p = i % n;
+	        j = i / n;
+
             // Decide on what future moment should be based on temp:
             // If positive, set to 1. If negative, to -1. If 0, leave untouched
             if(weightSum > 0.0001)
