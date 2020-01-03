@@ -65,7 +65,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
         j = (sh_y - 2 + blockY * BLOCK_SIZE + n) % n;
         g_id = j * n + p;
 
-        gpu_G_sh[sh_index] = gpu_G[g_idx];
+        gpu_G_sh[sh_index] = gpu_G[g_id];
 
     }
 
