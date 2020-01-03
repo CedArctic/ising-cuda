@@ -2,6 +2,9 @@
 #define BLOCK_SIZE 47
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
 #define GRID_SIZE 11
+// Moments shared memory cache size (= (BLOCK_SIZE+4) ^ 2)
+#define CACHE_SIZE 2601
+#define CACHE_LINE 51
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +33,9 @@
     can fit on a single SM (6 if we used shared memory caching due to memory limitations).
 */
 
+// Shared block memory for caching moments (size = (47+4) ^ 2)
+__shared__ double gpu_G_sh[CACHE_SIZE];
+
 // Cuda kernel function used to calculate one moment per thread
 __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 
@@ -42,46 +48,69 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     // Calculate thread_id based on the coordinates of the block
     int blockX = blockIdx.x % GRID_SIZE;
     int blockY = blockIdx.x / GRID_SIZE;
-    int thread_id = blockX * BLOCK_SIZE + blockY * BLOCK_SIZE * GRID_SIZE * BLOCK_SIZE + threadIdx.x;
+    int base_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
+    int thread_id = base_id + threadIdx.x;
+
+    // Indexing variables for caching
+    int g_id, sh_x, sh_y;
+
+    for(int sh_index = threadIdx.x; sh_index < CACHE_SIZE; sh_index += 55){
+
+        // X and Y coordinates on the shared memory
+        sh_x = sh_index % CACHE_LINE;
+        sh_y = sh_index / CACHE_LINE;
+
+        // Calculate coordinates on G based on the shared memory coordinates
+        p = (sh_x - 2 + n) % n;
+        j = (sh_y - 2 + n) % n;
+        g_id = j * n + p;
+
+        gpu_G_sh[sh_index] = gpu_G[g_idx];
+
+    }
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE +  BLOCK_SIZE * GRID_SIZE * BLOCK_SIZE; i += BLOCK_SIZE * GRID_SIZE){
+        for (int i = thread_id; i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE +  n * BLOCK_SIZE; i += n){
             
-            // Calculate moment's coordinates (j->Y, p->X axis)
+            // Calculate moment's coordinates on G (j->Y, p->X axis)
 	        p = i % n;
 	        j = i / n;
+
+            // Convert these coordinates to relative within the cache block
+            p = (p % BLOCK_SIZE) + 2;
+            j = (j % BLOCK_SIZE) + 2;
 
             // Reset weightSum for new moment
             weightSum = 0;
 
             // Unrolled weights calculations for this moment
-            weightSum += gpu_w[0] * gpu_G[((-2 + j + n) % n) * n + (-2 + p + n) % n];
-            weightSum += gpu_w[1] * gpu_G[((-2 + j + n) % n) * n + (-1 + p + n) % n];
-            weightSum += gpu_w[2] * gpu_G[((-2 + j + n) % n) * n + (p + n) % n];
-            weightSum += gpu_w[3] * gpu_G[((-2 + j + n) % n) * n + (1 + p + n) % n];
-            weightSum += gpu_w[4] * gpu_G[((-2 + j + n) % n) * n + (2 + p + n) % n];
-            weightSum += gpu_w[5] * gpu_G[((-1 + j + n) % n) * n + (-2 + p + n) % n];
-            weightSum += gpu_w[6] * gpu_G[((-1 + j + n) % n) * n + (-1 + p + n) % n];
-            weightSum += gpu_w[7] * gpu_G[((-1 + j + n) % n) * n + (p + n) % n];
-            weightSum += gpu_w[8] * gpu_G[((-1 + j + n) % n) * n + (1 + p + n) % n];
-            weightSum += gpu_w[9] * gpu_G[((-1 + j + n) % n) * n + (2 + p + n) % n];
-            weightSum += gpu_w[10] * gpu_G[((j + n) % n) * n + (-2 + p + n) % n];
-            weightSum += gpu_w[11] * gpu_G[((j + n) % n) * n + (-1 + p + n) % n];
-            weightSum += gpu_w[13] * gpu_G[((j + n) % n) * n + (1 + p + n) % n];
-            weightSum += gpu_w[14] * gpu_G[((j + n) % n) * n + (2 + p + n) % n];
-            weightSum += gpu_w[15] * gpu_G[((1 + j + n) % n) * n + (-2 + p + n) % n];
-            weightSum += gpu_w[16] * gpu_G[((1 + j + n) % n) * n + (-1 + p + n) % n];
-            weightSum += gpu_w[17] * gpu_G[((1 + j + n) % n) * n + (p + n) % n];
-            weightSum += gpu_w[18] * gpu_G[((1 + j + n) % n) * n + (1 + p + n) % n];
-            weightSum += gpu_w[19] * gpu_G[((1 + j + n) % n) * n + (2 + p + n) % n];
-            weightSum += gpu_w[20] * gpu_G[((2 + j + n) % n) * n + (-2 + p + n) % n];
-            weightSum += gpu_w[21] * gpu_G[((2 + j + n) % n) * n + (-1 + p + n) % n];
-            weightSum += gpu_w[22] * gpu_G[((2 + j + n) % n) * n + (p + n) % n];
-            weightSum += gpu_w[23] * gpu_G[((2 + j + n) % n) * n + (1 + p + n) % n];
-            weightSum += gpu_w[24] * gpu_G[((2 + j + n) % n) * n + (2 + p + n) % n];
+            weightSum += gpu_w[0] * gpu_G_sh[(-2 + j ) * n + (-2 + p)];
+            weightSum += gpu_w[1] * gpu_G_sh[(-2 + j ) * n + (-1 + p)];
+            weightSum += gpu_w[2] * gpu_G_sh[(-2 + j ) * n + p];
+            weightSum += gpu_w[3] * gpu_G_sh[(-2 + j ) * n + (1 + p)];
+            weightSum += gpu_w[4] * gpu_G_sh[(-2 + j ) * n + (2 + p)];
+            weightSum += gpu_w[5] * gpu_G_sh[(-1 + j ) * n + (-2 + p)];
+            weightSum += gpu_w[6] * gpu_G_sh[(-1 + j ) * n + (-1 + p)];
+            weightSum += gpu_w[7] * gpu_G_sh[(-1 + j ) * n + p];
+            weightSum += gpu_w[8] * gpu_G_sh[(-1 + j ) * n + (1 + p)];
+            weightSum += gpu_w[9] * gpu_G_sh[(-1 + j ) * n + (2 + p)];
+            weightSum += gpu_w[10] * gpu_G_sh[j * n + (-2 + p)];
+            weightSum += gpu_w[11] * gpu_G_sh[j * n + (-1 + p)];
+            weightSum += gpu_w[13] * gpu_G_sh[j * n + (1 + p)];
+            weightSum += gpu_w[14] * gpu_G_sh[j * n + (2 + p)];
+            weightSum += gpu_w[15] * gpu_G_sh[(1 + j) * n + (-2 + p)];
+            weightSum += gpu_w[16] * gpu_G_sh[(1 + j) * n + (-1 + p)];
+            weightSum += gpu_w[17] * gpu_G_sh[(1 + j) * n + p];
+            weightSum += gpu_w[18] * gpu_G_sh[(1 + j) * n + (1 + p)];
+            weightSum += gpu_w[19] * gpu_G_sh[(1 + j) * n + (2 + p)];
+            weightSum += gpu_w[20] * gpu_G_sh[(2 + j) * n + (-2 + p)];
+            weightSum += gpu_w[21] * gpu_G_sh[(2 + j) * n + (-1 + p)];
+            weightSum += gpu_w[22] * gpu_G_sh[(2 + j) * n + p];
+            weightSum += gpu_w[23] * gpu_G_sh[(2 + j) * n + (1 + p)];
+            weightSum += gpu_w[24] * gpu_G_sh[(2 + j) * n + (2 + p)];
 
             // Decide on what future moment should be based on temp:
             // If positive, set to 1. If negative, to -1. If 0, leave untouched
