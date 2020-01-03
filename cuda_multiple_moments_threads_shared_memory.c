@@ -54,7 +54,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     // Indexing variables for caching
     int g_id, sh_x, sh_y;
 
-    for(int sh_index = threadIdx.x; sh_index < CACHE_SIZE; sh_index += 55){
+    for(int sh_index = threadIdx.x; sh_index < CACHE_SIZE; sh_index += BLOCK_SIZE){
 
         // X and Y coordinates on the shared memory
         sh_x = sh_index % CACHE_LINE;
