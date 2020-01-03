@@ -33,11 +33,11 @@
     can fit on a single SM (6 if we used shared memory caching due to memory limitations).
 */
 
-// Shared block memory for caching moments (size = (47+4) ^ 2)
-__shared__ int gpu_G_sh[CACHE_SIZE];
-
 // Cuda kernel function used to calculate one moment per thread
 __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
+
+    // Shared block memory for caching moments (size = (47+4) ^ 2)
+    __shared__ int gpu_G_sh[CACHE_SIZE];
 
 	// Moment's coordinates (j->Y, p->X axis) - perform once and save since they are costly
 	int p,j;
