@@ -54,6 +54,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     // Indexing variables for caching
     int g_id, sh_x, sh_y;
 
+    // Caching G to shared memory
     for(int sh_index = threadIdx.x; sh_index < CACHE_SIZE; sh_index += BLOCK_SIZE){
 
         // X and Y coordinates on the shared memory
@@ -68,6 +69,9 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
         gpu_G_sh[sh_index] = gpu_G[g_id];
 
     }
+
+    // Sync threads before continuing
+    __syncthreads();
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
