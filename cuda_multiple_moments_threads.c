@@ -42,13 +42,13 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     // Calculate thread_id based on the coordinates of the block
     int blockX = blockIdx.x % GRID_SIZE;
     int blockY = blockIdx.x / GRID_SIZE;
-    int thread_id = blockX * BLOCK_SIZE + blockY * BLOCK_SIZE * GRID_SIZE * BLOCK_SIZE + threadIdx.x;
+    int thread_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE + threadIdx.x;
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE +  BLOCK_SIZE * GRID_SIZE * BLOCK_SIZE; i += BLOCK_SIZE * GRID_SIZE){
+        for (int i = thread_id; i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + n * BLOCK_SIZE; i += n){
             
             // Calculate moment's coordinates (j->Y, p->X axis)
 	        p = i % n;
@@ -150,8 +150,8 @@ void ising( int *G, double *w, int k, int n){
     cudaMemcpy(G, gpu_G, n*n*sizeof(int), cudaMemcpyDeviceToHost);
 
 	// Free memory
-	//cudaFree(gpu_G);
-	//cudaFree(gpu_gTemp);
+	cudaFree(gpu_G);
+	cudaFree(gpu_gTemp);
 
 }
 

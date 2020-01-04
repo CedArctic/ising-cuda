@@ -187,8 +187,8 @@ void ising( int *G, double *w, int k, int n){
     cudaMemcpy(G, gpu_G, n*n*sizeof(int), cudaMemcpyDeviceToHost);
 
 	// Free memory
-	//cudaFree(gpu_G);
-	//cudaFree(gpu_gTemp);
+	cudaFree(gpu_G);
+	cudaFree(gpu_gTemp);
 
 }
 
