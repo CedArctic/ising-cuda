@@ -79,7 +79,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE +  n * BLOCK_SIZE; i += n){
+        for (int i = thread_id; i < thread_id + n * BLOCK_SIZE; i += n){
             
             // Calculate moment's coordinates on G (i = y*n + x)
 	        x = i % n;
