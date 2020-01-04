@@ -1,7 +1,7 @@
 // Block size axis (BLOCK_SIZE^2 = number of threads per block)
 #define BLOCK_SIZE 47
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
-#define GRID_SIZE 11
+//#define GRID_SIZE 11  // Number is now dynamically decided based on n and BLOCK_SIZE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +31,7 @@
 */
 
 // Cuda kernel function used to calculate one moment per thread
-__global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
+__global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 
 	// Moment's coordinates
 	int x, y;
@@ -40,15 +40,17 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     double weightSum;
 
     // Calculate thread_id based on the coordinates of the block
-    int blockX = blockIdx.x % GRID_SIZE;
-    int blockY = blockIdx.x / GRID_SIZE;
+    int blockX = blockIdx.x % grid_size;
+    int blockY = blockIdx.x / grid_size;
     int thread_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE + threadIdx.x;
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + n * BLOCK_SIZE; i += n){
+        for (int i = thread_id; 
+            (i < blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + n * BLOCK_SIZE) && (i < n*n); 
+            i += n){
             
             // Calculate moment's coordinates (i = y*n + x)
 	        x = i % n;
@@ -108,7 +110,7 @@ void printResult(int *G, int n){
 void ising( int *G, double *w, int k, int n){
 
 	// Calculate number of blocks
-	//int blocks = ((n*n) % BLOCK_SIZE == 0) ? ((n*n) / BLOCK_SIZE) : ((n*n) / BLOCK_SIZE) + 1;
+	int grid_size = ((n % BLOCK_SIZE) == 0) ? (n/BLOCK_SIZE) : (n/BLOCK_SIZE + 1);
 
 	// Use cuda memcpy to copy weights array w to gpu memory gpu_w
 	double *gpu_w; 
@@ -135,7 +137,7 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<GRID_SIZE*GRID_SIZE, BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<grid_size*grid_size, BLOCK_SIZE>>>(n, grid_size, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaDeviceSynchronize();

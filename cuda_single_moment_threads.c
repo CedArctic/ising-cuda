@@ -1,7 +1,7 @@
 // Block size axis (BLOCK_SIZE^2 = number of threads per block)
 #define BLOCK_SIZE 11
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
-#define GRID_SIZE 47
+//#define GRID_SIZE 47 // Number is now dynamically decided based on n and BLOCK_SIZE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,8 +83,9 @@ void printResult(int *G, int n){
 
 void ising( int *G, double *w, int k, int n){
 
-	// Calculate number of blocks
-	//int blocks = ((n*n) % BLOCK_SIZE == 0) ? ((n*n) / BLOCK_SIZE) : ((n*n) / BLOCK_SIZE) + 1;
+	// Calculate number of blocks in a 2D grid with a predefined block size
+	//int blocks = ((n*n) % (BLOCK_SIZE * BLOCK_SIZE) == 0) ? ((n*n) / (BLOCK_SIZE * BLOCK_SIZE)) : ((n*n) / (BLOCK_SIZE * BLOCK_SIZE)) + 1;
+	int grid_size = ((n % BLOCK_SIZE) == 0) ? (n/BLOCK_SIZE) : (n/BLOCK_SIZE + 1);
 
 	// Use cuda memcpy to copy weights array w to gpu memory gpu_w
 	double *gpu_w; 
@@ -111,7 +112,7 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<GRID_SIZE*GRID_SIZE, BLOCK_SIZE*BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<grid_size * grid_size, BLOCK_SIZE*BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaDeviceSynchronize();
