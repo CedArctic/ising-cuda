@@ -61,9 +61,10 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
         sh_x = sh_index % CACHE_LINE;
         sh_y = sh_index / CACHE_LINE;
 
+        // Constant starting point (block0 -2, block0 -2) and variable offsets according to thread's current sh_index
         // Calculate coordinates on G based on the shared memory coordinates
-        x = (sh_x - 2 + blockX * BLOCK_SIZE + n) % n;
-        y = (sh_y - 2 + blockY * BLOCK_SIZE + n) % n;
+        x = (blockX * BLOCK_SIZE - 2 + sh_x + n) % n;
+        y = (blockY * BLOCK_SIZE - 2 + sh_y + n) % n;
         g_id = y * n + x;
 
         // Cache G moment to shared memory
