@@ -24,9 +24,9 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	// Calculate thread id
 	int thread_id = blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + threadIdx.x;
 
-	// Moment's coordinates (j->Y, p->X axis) - perform once and save since they are costly
-	int p = thread_id % n;
-	int j = thread_id / n;
+	// Moment's coordinates (i = y*n + x) - perform once and save since they are costly
+	int x = thread_id % n;
+	int y = thread_id / n;
 	
 	// Sum variable to decide what value a moment will take
 	double weightSum = 0;
@@ -35,39 +35,39 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	if(thread_id < n*n){
 
 		// Unrolled weights calculations for this moment
-		weightSum += gpu_w[0] * gpu_G[((-2 + j + n) % n) * n + (-2 + p + n) % n];
-		weightSum += gpu_w[1] * gpu_G[((-2 + j + n) % n) * n + (-1 + p + n) % n];
-		weightSum += gpu_w[2] * gpu_G[((-2 + j + n) % n) * n + (p + n) % n];
-		weightSum += gpu_w[3] * gpu_G[((-2 + j + n) % n) * n + (1 + p + n) % n];
-		weightSum += gpu_w[4] * gpu_G[((-2 + j + n) % n) * n + (2 + p + n) % n];
-		weightSum += gpu_w[5] * gpu_G[((-1 + j + n) % n) * n + (-2 + p + n) % n];
-		weightSum += gpu_w[6] * gpu_G[((-1 + j + n) % n) * n + (-1 + p + n) % n];
-		weightSum += gpu_w[7] * gpu_G[((-1 + j + n) % n) * n + (p + n) % n];
-		weightSum += gpu_w[8] * gpu_G[((-1 + j + n) % n) * n + (1 + p + n) % n];
-		weightSum += gpu_w[9] * gpu_G[((-1 + j + n) % n) * n + (2 + p + n) % n];
-		weightSum += gpu_w[10] * gpu_G[((j + n) % n) * n + (-2 + p + n) % n];
-		weightSum += gpu_w[11] * gpu_G[((j + n) % n) * n + (-1 + p + n) % n];
-		weightSum += gpu_w[13] * gpu_G[((j + n) % n) * n + (1 + p + n) % n];
-		weightSum += gpu_w[14] * gpu_G[((j + n) % n) * n + (2 + p + n) % n];
-		weightSum += gpu_w[15] * gpu_G[((1 + j + n) % n) * n + (-2 + p + n) % n];
-		weightSum += gpu_w[16] * gpu_G[((1 + j + n) % n) * n + (-1 + p + n) % n];
-		weightSum += gpu_w[17] * gpu_G[((1 + j + n) % n) * n + (p + n) % n];
-		weightSum += gpu_w[18] * gpu_G[((1 + j + n) % n) * n + (1 + p + n) % n];
-		weightSum += gpu_w[19] * gpu_G[((1 + j + n) % n) * n + (2 + p + n) % n];
-		weightSum += gpu_w[20] * gpu_G[((2 + j + n) % n) * n + (-2 + p + n) % n];
-		weightSum += gpu_w[21] * gpu_G[((2 + j + n) % n) * n + (-1 + p + n) % n];
-		weightSum += gpu_w[22] * gpu_G[((2 + j + n) % n) * n + (p + n) % n];
-		weightSum += gpu_w[23] * gpu_G[((2 + j + n) % n) * n + (1 + p + n) % n];
-		weightSum += gpu_w[24] * gpu_G[((2 + j + n) % n) * n + (2 + p + n) % n];
+		weightSum += gxu_w[0] * gxu_G[((-2 + y + n) % n) * n + (-2 + x + n) % n];
+		weightSum += gxu_w[1] * gxu_G[((-2 + y + n) % n) * n + (-1 + x + n) % n];
+		weightSum += gxu_w[2] * gxu_G[((-2 + y + n) % n) * n + (x + n) % n];
+		weightSum += gxu_w[3] * gxu_G[((-2 + y + n) % n) * n + (1 + x + n) % n];
+		weightSum += gxu_w[4] * gxu_G[((-2 + y + n) % n) * n + (2 + x + n) % n];
+		weightSum += gxu_w[5] * gxu_G[((-1 + y + n) % n) * n + (-2 + x + n) % n];
+		weightSum += gxu_w[6] * gxu_G[((-1 + y + n) % n) * n + (-1 + x + n) % n];
+		weightSum += gxu_w[7] * gxu_G[((-1 + y + n) % n) * n + (x + n) % n];
+		weightSum += gxu_w[8] * gxu_G[((-1 + y + n) % n) * n + (1 + x + n) % n];
+		weightSum += gxu_w[9] * gxu_G[((-1 + y + n) % n) * n + (2 + x + n) % n];
+		weightSum += gxu_w[10] * gxu_G[((y + n) % n) * n + (-2 + x + n) % n];
+		weightSum += gxu_w[11] * gxu_G[((y + n) % n) * n + (-1 + x + n) % n];
+		weightSum += gxu_w[13] * gxu_G[((y + n) % n) * n + (1 + x + n) % n];
+		weightSum += gxu_w[14] * gxu_G[((y + n) % n) * n + (2 + x + n) % n];
+		weightSum += gxu_w[15] * gxu_G[((1 + y + n) % n) * n + (-2 + x + n) % n];
+		weightSum += gxu_w[16] * gxu_G[((1 + y + n) % n) * n + (-1 + x + n) % n];
+		weightSum += gxu_w[17] * gxu_G[((1 + y + n) % n) * n + (x + n) % n];
+		weightSum += gxu_w[18] * gxu_G[((1 + y + n) % n) * n + (1 + x + n) % n];
+		weightSum += gxu_w[19] * gxu_G[((1 + y + n) % n) * n + (2 + x + n) % n];
+		weightSum += gxu_w[20] * gxu_G[((2 + y + n) % n) * n + (-2 + x + n) % n];
+		weightSum += gxu_w[21] * gxu_G[((2 + y + n) % n) * n + (-1 + x + n) % n];
+		weightSum += gxu_w[22] * gxu_G[((2 + y + n) % n) * n + (x + n) % n];
+		weightSum += gxu_w[23] * gxu_G[((2 + y + n) % n) * n + (1 + x + n) % n];
+		weightSum += gxu_w[24] * gxu_G[((2 + y + n) % n) * n + (2 + x + n) % n];
 
 		// Decide on what future moment should be based on temp:
 		// If positive, set to 1. If negative, to -1. If 0, leave untouched
 		if(weightSum > 0.0001)
-			gpu_gTemp[j * n + p] = 1;
+			gpu_gTemp[i] = 1;
 		else if(weightSum < -0.0001)
-			gpu_gTemp[j * n + p] = -1;
+			gpu_gTemp[i] = -1;
 		else
-			gpu_gTemp[j * n + p] = gpu_G[j * n + p];
+			gpu_gTemp[i] = gpu_G[i];
 	}
 }
 
