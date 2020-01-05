@@ -4,7 +4,7 @@
 //#define GRID_SIZE 11  // Number is now dynamically decided based on n and BLOCK_SIZE
 
 // Threads per block
-#define BLOCK_THREADS 47
+#define BLOCK_THREADS 256
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +33,10 @@
     can fit on a single SM (6 if we used shared memory caching due to memory limitations).
 */
 
+/* Version 3:
+    Blocks per thread are independent of block size
+*/
+
 // Cuda kernel function used to calculate one moment per thread
 __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 
@@ -45,7 +49,8 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
     // Calculate thread_id based on the coordinates of the block
     int blockX = blockIdx.x % grid_size;
     int blockY = blockIdx.x / grid_size;
-    int thread_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
+    int block_base = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
+    int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
@@ -98,7 +103,7 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
             // Calculate next i
             // Calculate local i and increment by threads number, then calculate new global i
             i = (y % BLOCK_SIZE) * BLOCK_SIZE + (x % BLOCK_SIZE) + BLOCK_THREADS;
-            i = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE + i % BLOCK_SIZE + n * (i / BLOCK_SIZE);
+            i = block_base + i % BLOCK_SIZE + n * (i / BLOCK_SIZE);
         }
 	}
 }
