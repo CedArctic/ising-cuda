@@ -3,8 +3,8 @@
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
 //#define GRID_SIZE 11 // Number is now dynamically decided based on n and BLOCK_SIZE
 // Moments shared memory cache size (= (BLOCK_SIZE+4) ^ 2)
-#define CACHE_SIZE 2601
-#define CACHE_LINE 51
+#define CACHE_LINE (BLOCK_SIZE + 4)
+#define CACHE_SIZE (CACHE_LINE * CACHE_LINE)
 
 #include <stdio.h>
 #include <stdlib.h>
