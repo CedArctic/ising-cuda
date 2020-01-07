@@ -1,10 +1,10 @@
 // Block size axis (BLOCK_SIZE^2 = number of threads per block)
 #define BLOCK_SIZE 47
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
-#define GRID_SIZE 11
+//#define GRID_SIZE 11 // Number is now dynamically decided based on n and BLOCK_SIZE
 // Moments shared memory cache size (= (BLOCK_SIZE+4) ^ 2)
-#define CACHE_SIZE 2601
-#define CACHE_LINE 51
+#define CACHE_LINE (BLOCK_SIZE + 4)
+#define CACHE_SIZE (CACHE_LINE * CACHE_LINE)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +34,7 @@
 */
 
 // Cuda kernel function used to calculate one moment per thread
-__global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
+__global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 
     // Shared block memory for caching moments (size = (47+4) ^ 2)
     __shared__ int gpu_G_sh[CACHE_SIZE];
@@ -46,8 +46,8 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
     double weightSum;
 
     // Calculate thread_id based on the coordinates of the block
-    int blockX = blockIdx.x % GRID_SIZE;
-    int blockY = blockIdx.x / GRID_SIZE;
+    int blockX = blockIdx.x % grid_size;
+    int blockY = blockIdx.x / grid_size;
     int base_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
     int thread_id = base_id + threadIdx.x;
 
@@ -79,7 +79,7 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; i < thread_id + n * BLOCK_SIZE; i += n){
+        for (int i = thread_id; (i < thread_id + n * BLOCK_SIZE) && (i < n*n); i += n){
             
             // Calculate moment's coordinates on G (i = y*n + x)
 	        x = i % n;
@@ -143,7 +143,7 @@ void printResult(int *G, int n){
 void ising( int *G, double *w, int k, int n){
 
 	// Calculate number of blocks
-	//int blocks = ((n*n) % BLOCK_SIZE == 0) ? ((n*n) / BLOCK_SIZE) : ((n*n) / BLOCK_SIZE) + 1;
+    int grid_size = ((n % BLOCK_SIZE) == 0) ? (n/BLOCK_SIZE) : (n/BLOCK_SIZE + 1);
 
 	// Use cuda memcpy to copy weights array w to gpu memory gpu_w
 	double *gpu_w; 
@@ -170,7 +170,7 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<GRID_SIZE*GRID_SIZE, BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<grid_size*grid_size, BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaDeviceSynchronize();
@@ -195,32 +195,42 @@ int main(){
 	// Set dimensions and number of iterations
 	int n = 517;	int k = 1;
 
-	// Open binary file and write contents to an array
-    FILE *fptr = fopen("conf-init.bin","rb");
-    printf("Pointer created\n");
-    int *G = (int*)calloc(n*n, sizeof(int));
-    printf("G allocated\n");
-    if (fptr == NULL){
-        printf("Error! opening file");
-        // Program exits if the file pointer returns NULL.
-        exit(1);
-    }
-
-    fread(G, sizeof(int), n*n, fptr);
-
-    // Define weights array
+	// Define weights array
     double weights[] = {0.004, 0.016, 0.026, 0.016, 0.004,
     		0.016, 0.071, 0.117, 0.071, 0.016,
 			0.026, 0.117, 0, 0.117, 0.026,
 			0.016, 0.071, 0.117, 0.071, 0.016,
 			0.004, 0.016, 0.026, 0.016, 0.004};
 
+	// Open binary file and write contents to an array
+    FILE *fptr = fopen("conf-init.bin","rb");
+    int *G = (int*)scalloc(n*n, sizeof(int));
+    if (fptr == NULL){
+        printf("Error! opening file");
+        exit(1);
+    }
+    fread(G, sizeof(int), n*n, fptr);
+	fclose(fptr);
+
     // Call ising
     ising(G, weights, k, n);
 
-    // Close binary file
-    fclose(fptr);
-    printf("Done");
+	// Open results binary file and write contents to an array
+    FILE *fptrR = fopen("conf-1.bin","rb");
+    int *R = (int*)scalloc(n*n, sizeof(int));
+    if (fptrR == NULL){
+        printf("Error! opening file");
+        exit(1);
+    }
+    fread(R, sizeof(int), n*n, fptr);
+	fclose(fptrR);
+
+	// Check results
+	int errNum = 0;
+    for (int i=0; i < n*n; i++)
+		if(G[i] != R[i])
+			errNum++;
+	printf("Done testing, found %d errors", errNum);
 
     return 0;
 }

@@ -173,32 +173,42 @@ int main(){
 	// Set dimensions and number of iterations
 	int n = 517;	int k = 1;
 
-	// Open binary file and write contents to an array
-    FILE *fptr = fopen("conf-init.bin","rb");
-    printf("Pointer created\n");
-    int *G = (int*)calloc(n*n, sizeof(int));
-    printf("G allocated\n");
-    if (fptr == NULL){
-        printf("Error! opening file");
-        // Program exits if the file pointer returns NULL.
-        exit(1);
-    }
-
-    fread(G, sizeof(int), n*n, fptr);
-
-    // Define weights array
+	// Define weights array
     double weights[] = {0.004, 0.016, 0.026, 0.016, 0.004,
     		0.016, 0.071, 0.117, 0.071, 0.016,
 			0.026, 0.117, 0, 0.117, 0.026,
 			0.016, 0.071, 0.117, 0.071, 0.016,
 			0.004, 0.016, 0.026, 0.016, 0.004};
 
+	// Open binary file and write contents to an array
+    FILE *fptr = fopen("conf-init.bin","rb");
+    int *G = (int*)scalloc(n*n, sizeof(int));
+    if (fptr == NULL){
+        printf("Error! opening file");
+        exit(1);
+    }
+    fread(G, sizeof(int), n*n, fptr);
+	fclose(fptr);
+
     // Call ising
     ising(G, weights, k, n);
 
-    // Close binary file
-    fclose(fptr);
-    printf("Done");
+	// Open results binary file and write contents to an array
+    FILE *fptrR = fopen("conf-1.bin","rb");
+    int *R = (int*)scalloc(n*n, sizeof(int));
+    if (fptrR == NULL){
+        printf("Error! opening file");
+        exit(1);
+    }
+    fread(R, sizeof(int), n*n, fptr);
+	fclose(fptrR);
+
+	// Check results
+	int errNum = 0;
+    for (int i=0; i < n*n; i++)
+		if(G[i] != R[i])
+			errNum++;
+	printf("Done testing, found %d errors", errNum);
 
     return 0;
 }
