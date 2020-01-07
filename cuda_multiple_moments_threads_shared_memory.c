@@ -62,7 +62,7 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
     // 1st caching method:     for(int sh_index = threadIdx.x; sh_index < CACHE_SIZE; sh_index += BLOCK_SIZE){
     // 2nd method: for(int sh_index = threadIdx.x  (CACHE_SIZE/BLOCK_THREADS + 1); (sh_index < (threadIdx.x + 1)  (CACHE_SIZE/BLOCK_THREADS + 1) + CACHE_SIZE/BLOCK_THREADS + 1) && (sh_index < CACHE_SIZE); sh_index ++){
     for(int sh_index = threadIdx.x * (CACHE_SIZE/BLOCK_THREADS + 1);
-        (sh_index < (threadIdx.x + 1) * (CACHE_SIZE/BLOCK_THREADS + 1) + CACHE_SIZE/BLOCK_THREADS + 1) && (sh_index < CACHE_SIZE);
+        (sh_index < (threadIdx.x + 1) * (CACHE_SIZE/BLOCK_THREADS + 1)) && (sh_index < CACHE_SIZE);
         sh_index ++){
 
         // X and Y coordinates on the shared memory
