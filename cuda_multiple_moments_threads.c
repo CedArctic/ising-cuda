@@ -3,7 +3,7 @@
 // Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
 //#define GRID_SIZE 11  // Number is now dynamically decided based on n and BLOCK_SIZE
 
-// Threads per block (1024 resident blocks / 16 resident threads = 64 threads per block)
+// Threads per block (1024 resident threads / 16 resident blocks = 64 threads per block)
 #define BLOCK_THREADS 64
 
 #include <stdio.h>

@@ -6,7 +6,7 @@
 #define CACHE_LINE (BLOCK_SIZE + 4)
 #define CACHE_SIZE (CACHE_LINE * CACHE_LINE)
 
-// Threads per block (1024 resident blocks / 16 resident threads = 64 threads per block)
+// Threads per block (1024 resident threads / 16 resident blocks = 64 threads per block)
 #define BLOCK_THREADS 64
 
 #include <stdio.h>
@@ -51,7 +51,7 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
     // Calculate thread_id based on the coordinates of the block
     int blockX = blockIdx.x % grid_size;
     int blockY = blockIdx.x / grid_size;
-    int base_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
+    int block_base = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
     //FIX: If grid is not precise, this can get out of bounds
     int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
 
@@ -179,7 +179,7 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<grid_size*grid_size, BLOCK_SIZE>>>(n, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<grid_size*grid_size, BLOCK_THREADS>>>(n, grid_size, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaDeviceSynchronize();
