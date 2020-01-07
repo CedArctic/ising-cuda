@@ -50,13 +50,14 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
     int blockX = blockIdx.x % grid_size;
     int blockY = blockIdx.x / grid_size;
     int block_base = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
+    //FIX: If grid is not precise, this can get out of bounds
     int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
 
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; (i <= block_base + n * (BLOCK_SIZE - 1) + BLOCK_SIZE) && (i < n*n); ){
+        for (int i = thread_id; (i < block_base + n * (BLOCK_SIZE - 1) + BLOCK_SIZE) && (i < n*n); ){
             
             // Calculate moment's coordinates (i = y*n + x)
 	        x = i % n;
@@ -148,7 +149,7 @@ void ising( int *G, double *w, int k, int n){
 	for(int i = 0; i < k; i++){
 
 		// Call cudaKernel for each iteration using pointers to cuda memory
-		cudaKernel<<<grid_size*grid_size, BLOCK_SIZE>>>(n, grid_size, gpu_w, gpu_G, gpu_gTemp);
+		cudaKernel<<<grid_size*grid_size, BLOCK_THREADS>>>(n, grid_size, gpu_w, gpu_G, gpu_gTemp);
 
 		// Synchronize threads before swapping pointers
 		cudaDeviceSynchronize();
