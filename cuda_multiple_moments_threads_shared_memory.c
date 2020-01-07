@@ -6,6 +6,9 @@
 #define CACHE_LINE (BLOCK_SIZE + 4)
 #define CACHE_SIZE (CACHE_LINE * CACHE_LINE)
 
+// Threads per block (1024 resident blocks / 16 resident threads = 64 threads per block)
+#define BLOCK_THREADS 64
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +52,8 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
     int blockX = blockIdx.x % grid_size;
     int blockY = blockIdx.x / grid_size;
     int base_id = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
-    int thread_id = base_id + threadIdx.x;
+    //FIX: If grid is not precise, this can get out of bounds
+    int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
 
     // Indexing variables for caching
     int g_id, sh_x, sh_y, g_x, g_y;
@@ -79,7 +83,7 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
 	if(thread_id < n*n){
 
         // Iterate through the moments assigned for each thread
-        for (int i = thread_id; (i < thread_id + n * BLOCK_SIZE) && (i < n*n); i += n){
+        for (int i = thread_id; (i < block_base + n * (BLOCK_SIZE - 1) + BLOCK_SIZE) && (i < n*n); ){
             
             // Calculate moment's coordinates on G (i = y*n + x)
 	        x = i % n;
@@ -126,6 +130,11 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
                 gpu_gTemp[i] = -1;
             else
                 gpu_gTemp[i] = gpu_G[i];
+
+            // Calculate next i
+            // Calculate local i and increment by threads number, then calculate new global i
+            i = (y % BLOCK_SIZE) * BLOCK_SIZE + (x % BLOCK_SIZE) + BLOCK_THREADS;
+            i = block_base + i % BLOCK_SIZE + n * (i / BLOCK_SIZE);
         }
 	}
 }
