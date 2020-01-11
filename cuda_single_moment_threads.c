@@ -1,7 +1,5 @@
 // Block size axis (BLOCK_SIZE^2 = number of threads per block)
-#define BLOCK_SIZE 11
-// Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
-//#define GRID_SIZE 47 // Number is now dynamically decided based on n and BLOCK_SIZE
+#define BLOCK_SIZE 47
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,7 +102,7 @@ __global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag)
 	
 }
 
-
+// Function to print out the moments matrix
 void printResult(int *G, int n){
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
@@ -115,10 +113,10 @@ void printResult(int *G, int n){
 
 }
 
+// Ising model evolution function
 void ising( int *G, double *w, int k, int n){
 
 	// Calculate number of blocks in a 2D grid with a predefined block size
-	//int blocks = ((n*n) % (BLOCK_SIZE * BLOCK_SIZE) == 0) ? ((n*n) / (BLOCK_SIZE * BLOCK_SIZE)) : ((n*n) / (BLOCK_SIZE * BLOCK_SIZE)) + 1;
 	int grid_size = ((n % BLOCK_SIZE) == 0) ? (n/BLOCK_SIZE) : (n/BLOCK_SIZE + 1);
 
 	// Use cuda memcpy to copy weights array w to gpu memory gpu_w
@@ -144,7 +142,7 @@ void ising( int *G, double *w, int k, int n){
 	cudaMalloc(&gpu_exitFlag, sizeof(int));
 	cudaMemcpy(gpu_exitFlag, &exitFlag, sizeof(int), cudaMemcpyHostToDevice);
 
-	// Define grid and block dimensions - disabled for now
+	// Define grid and block dimensions - they are handled manually for now
 	//dim3 dimGrid(GRID_SIZE, GRID_SIZE);
 	//dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
@@ -194,7 +192,7 @@ int main(){
 
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
-    int *G = (int*)scalloc(n*n, sizeof(int));
+    int *G = (int*)calloc(n*n, sizeof(int));
     if (fptr == NULL){
         printf("Error! opening file");
         exit(1);
@@ -202,12 +200,12 @@ int main(){
     fread(G, sizeof(int), n*n, fptr);
 	fclose(fptr);
 
-    // Call ising
+    // Call ising model evolution function
     ising(G, weights, k, n);
 
 	// Open results binary file and write contents to an array
     FILE *fptrR = fopen("conf-1.bin","rb");
-    int *R = (int*)scalloc(n*n, sizeof(int));
+    int *R = (int*)calloc(n*n, sizeof(int));
     if (fptrR == NULL){
         printf("Error! opening file");
         exit(1);
