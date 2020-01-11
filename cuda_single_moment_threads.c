@@ -63,11 +63,11 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 		// Decide on what future moment should be based on temp:
 		// If positive, set to 1. If negative, to -1. If 0, leave untouched
 		if(weightSum > 0.0001)
-			gpu_gTemp[i] = 1;
+			gpu_gTemp[thread_id] = 1;
 		else if(weightSum < -0.0001)
-			gpu_gTemp[i] = -1;
+			gpu_gTemp[thread_id] = -1;
 		else
-			gpu_gTemp[i] = gpu_G[i];
+			gpu_gTemp[thread_id] = gpu_G[thread_id];
 	}
 }
 
