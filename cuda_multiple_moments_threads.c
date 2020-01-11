@@ -110,7 +110,7 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
 }
 
 // Cuda kernel function used to check for early exit if G == gTemp
-__global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag){
+__global__ void exitKernel(int n, int grid_size, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag){
 	
 	// Shared block exit flag
     __shared__ int blockFlag;
@@ -213,7 +213,7 @@ void ising( int *G, double *w, int k, int n){
 		gpu_gTemp = gpu_swapPtr;
 		
 		// Check for early exit
-		exitKernel<<<grid_size * grid_size, BLOCK_SIZE*BLOCK_SIZE>>>(n, gpu_G, gpu_gTemp, gpu_exitFlag);
+		exitKernel<<<grid_size * grid_size, BLOCK_SIZE*BLOCK_SIZE>>>(n, grid_size, gpu_G, gpu_gTemp, gpu_exitFlag);
 		cudaDeviceSynchronize();
 		cudaMemcpy(&exitFlag, gpu_exitFlag, sizeof(int), cudaMemcpyDeviceToHost);
 		if(exitFlag > 0)
