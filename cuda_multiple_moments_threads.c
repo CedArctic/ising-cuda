@@ -129,11 +129,18 @@ __global__ void exitKernel(int n, int grid_size, int* gpu_G, int* gpu_gTemp, int
     //FIX: If grid is not precise, this can get out of bounds
     int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
 	
+	// Moment coordinates
+	int x, y;
+	
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
 		
 		// Iterate through the moments assigned for each thread
         for (int i = thread_id; (i < block_base + n * (BLOCK_SIZE - 1) + BLOCK_SIZE) && (i < n*n); ){
+			
+			// Calculate moment's coordinates (i = y*n + x)
+	        x = i % n;
+	        y = i / n;
 		
 			// If two values are not the same, increment the flag
 			// This is not race-condition safe but we don't care since one write is guaranteed to finish
@@ -151,9 +158,14 @@ __global__ void exitKernel(int n, int grid_size, int* gpu_G, int* gpu_gTemp, int
 				*gpu_exitFlag+=1;
 				break;
 			}
+			
+			// Calculate next i
+            // Calculate local i and increment by threads number, then calculate new global i
+            i = (y % BLOCK_SIZE) * BLOCK_SIZE + (x % BLOCK_SIZE) + BLOCK_THREADS;
+            i = block_base + i % BLOCK_SIZE + n * (i / BLOCK_SIZE);
+			
 		}
 	}
-	
 }
 
 void printResult(int *G, int n){
@@ -213,7 +225,7 @@ void ising( int *G, double *w, int k, int n){
 		gpu_gTemp = gpu_swapPtr;
 		
 		// Check for early exit
-		exitKernel<<<grid_size * grid_size, BLOCK_SIZE*BLOCK_SIZE>>>(n, grid_size, gpu_G, gpu_gTemp, gpu_exitFlag);
+		exitKernel<<<grid_size * grid_size, BLOCK_THREADS>>>(n, grid_size, gpu_G, gpu_gTemp, gpu_exitFlag);
 		cudaDeviceSynchronize();
 		cudaMemcpy(&exitFlag, gpu_exitFlag, sizeof(int), cudaMemcpyDeviceToHost);
 		if(exitFlag > 0)
