@@ -75,7 +75,14 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 __global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag){
 	
 	// Shared block exit flag
-    __shared__ int blockFlag = 0;
+    __shared__ int blockFlag;
+	
+	// Initialize blockFlag
+	if(threadIdx.x == 0)
+		blockFlag = 0;
+		
+	// Sync threads before continuing
+	__syncthreads();
 	
 	// Calculate thread id
 	int thread_id = blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + threadIdx.x;
@@ -89,7 +96,7 @@ __global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag)
 	__syncthreads();
 	
 	// First thread of the block writes flag back to the global memory
-	if((thread_id == blockIdx.x * BLOCK_SIZE * BLOCK_SIZE) && (blockFlag > 0))
+	if((threadIdx.x == 0) && (blockFlag > 0))
 		atomicAdd(gpu_exitFlag, blockFlag);
 	
 }
