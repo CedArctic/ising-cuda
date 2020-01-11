@@ -144,7 +144,7 @@ __global__ void exitKernel(int n, int grid_size, int* gpu_G, int* gpu_gTemp, int
 		
 			// If two values are not the same, increment the flag
 			// This is not race-condition safe but we don't care since one write is guaranteed to finish
-			if(gpu_gTemp[i] == gpu_G[i]){
+			if(gpu_gTemp[i] != gpu_G[i]){
 				blockFlag += 1;
 				if(threadIdx.x != 0)
 					break;
@@ -228,7 +228,7 @@ void ising( int *G, double *w, int k, int n){
 		exitKernel<<<grid_size * grid_size, BLOCK_THREADS>>>(n, grid_size, gpu_G, gpu_gTemp, gpu_exitFlag);
 		cudaDeviceSynchronize();
 		cudaMemcpy(&exitFlag, gpu_exitFlag, sizeof(int), cudaMemcpyDeviceToHost);
-		if(exitFlag > 0)
+		if(exitFlag == 0)
 			break;
 	}
 
