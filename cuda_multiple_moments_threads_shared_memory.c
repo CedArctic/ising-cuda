@@ -1,12 +1,11 @@
 // Block size axis (BLOCK_SIZE^2 = number of threads per block)
 #define BLOCK_SIZE 47
-// Number of blocks on axis (GRID_SIZE^2 = number of blocks in grid)
-//#define GRID_SIZE 11 // Number is now dynamically decided based on n and BLOCK_SIZE
+
 // Moments shared memory cache size (= (BLOCK_SIZE+4) ^ 2)
 #define CACHE_LINE (BLOCK_SIZE + 4)
 #define CACHE_SIZE (CACHE_LINE * CACHE_LINE)
 
-// Threads per block (1024 resident threads / 16 resident blocks = 64 threads per block)
+// Threads per block - threads per block are independent of BLOCK_SIZE
 #define BLOCK_THREADS 512
 
 #include <stdio.h>
@@ -22,18 +21,6 @@
   \param n      Number of lattice points per dim        [scalar]
 
   NOTE: Both matrices G and w are stored in row-major format.
-*/
-
-/* Version 1: Spawn 11 threads per block (not 121 as before), each one taking on 11 moments ie
-    thread k takes on moments k, k+11, k+22, ... (11 if we are refering within the block, 
-    517 = 47 * 11 = BLOCK_SIZE * GRID_SIZE for matrix G)
-    For V2 cache the whole block before starting ops
-*/
-
-/* Version 2:
-    Note: Currently implemented with just 47 threads
-    11x11 grid with 47x47 moments and 47*2=94 threads per block. 10 such resident blocks 
-    can fit on a single SM (6 if we used shared memory caching due to memory limitations).
 */
 
 // Cuda kernel function used to calculate one moment per thread
@@ -202,6 +189,7 @@ __global__ void exitKernel(int n, int grid_size, int* gpu_G, int* gpu_gTemp, int
 	}
 }
 
+// Function to print out the moments matrix
 void printResult(int *G, int n){
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
@@ -212,6 +200,7 @@ void printResult(int *G, int n){
 
 }
 
+// Ising model evolution function
 void ising( int *G, double *w, int k, int n){
 
 	// Calculate number of blocks
@@ -240,7 +229,7 @@ void ising( int *G, double *w, int k, int n){
 	cudaMalloc(&gpu_exitFlag, sizeof(int));
 	cudaMemcpy(gpu_exitFlag, &exitFlag, sizeof(int), cudaMemcpyHostToDevice);
 
-	// Define grid and block dimensions - avoid using dim objects for now
+	// Define grid and block dimensions - they are handled manually for now
 	//dim3 dimGrid(GRID_SIZE, GRID_SIZE);
 	//dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
@@ -297,7 +286,7 @@ int main(){
     fread(G, sizeof(int), n*n, fptr);
 	fclose(fptr);
 
-    // Call ising
+    // Call ising model evolution function
     ising(G, weights, k, n);
 
 	// Open results binary file and write contents to an array
