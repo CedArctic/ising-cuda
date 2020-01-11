@@ -237,6 +237,7 @@ int main(){
 			0.016, 0.071, 0.117, 0.071, 0.016,
 			0.004, 0.016, 0.026, 0.016, 0.004};
 
+    /* Enable to use with input binaries
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
     int *G = (int*)calloc(n*n, sizeof(int));
@@ -245,11 +246,19 @@ int main(){
         exit(1);
     }
     fread(G, sizeof(int), n*n, fptr);
-	fclose(fptr);
+    fclose(fptr);
+    */
+
+    // Generate random input data
+    srand(time(NULL));
+    int *G = calloc(n*n, sizeof(int));
+    for(int i = 0; i < n*n; i++)
+        G[i] = rand() % 2;
 
     // Call ising model evolution function
     ising(G, weights, k, n);
 
+    /* Enable to use with input binaries
 	// Open results binary file and write contents to an array
     FILE *fptrR = fopen("conf-1.bin","rb");
     int *R = (int*)calloc(n*n, sizeof(int));
@@ -265,7 +274,9 @@ int main(){
     for (int i=0; i < n*n; i++)
 		if(G[i] != R[i])
 			errNum++;
-	printf("Done testing, found %d errors", errNum);
+    printf("Done testing, found %d errors", errNum);
+    
+    */
 
     return 0;
 }
