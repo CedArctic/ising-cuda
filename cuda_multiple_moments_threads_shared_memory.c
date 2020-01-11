@@ -143,6 +143,65 @@ __global__ void cudaKernel(int n, int grid_size, double* gpu_w, int* gpu_G, int*
 	}
 }
 
+// Cuda kernel function used to check for early exit if G == gTemp
+__global__ void exitKernel(int n, int grid_size, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag){
+	
+	// Shared block exit flag
+    __shared__ int blockFlag;
+	
+	// Initialize blockFlag
+	if(threadIdx.x == 0)
+		blockFlag = 0;
+		
+	// Sync threads before continuing
+	__syncthreads();
+	
+    // Calculate thread_id based on the coordinates of the block
+    int blockX = blockIdx.x % grid_size;
+    int blockY = blockIdx.x / grid_size;
+    int block_base = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
+    //FIX: If grid is not precise, this can get out of bounds
+    int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
+	
+	// Moment coordinates
+	int x, y;
+	
+	// Check if thread id is within bounds and execute
+	if(thread_id < n*n){
+		
+		// Iterate through the moments assigned for each thread
+        for (int i = thread_id; (i < block_base + n * (BLOCK_SIZE - 1) + BLOCK_SIZE) && (i < n*n); ){
+			
+			// Calculate moment's coordinates (i = y*n + x)
+	        x = i % n;
+	        y = i / n;
+		
+			// If two values are not the same, increment the flag
+			// This is not race-condition safe but we don't care since one write is guaranteed to finish
+			if(gpu_gTemp[i] != gpu_G[i]){
+				blockFlag += 1;
+				if(threadIdx.x != 0)
+					break;
+			}
+			
+			// Sync threads before writing to global
+			__syncthreads();
+			
+			// First thread of the block writes flag back to the global memory
+			if((threadIdx.x == 0) && (blockFlag > 0)){
+				*gpu_exitFlag+=1;
+				break;
+			}
+			
+			// Calculate next i
+            // Calculate local i and increment by threads number, then calculate new global i
+            i = (y % BLOCK_SIZE) * BLOCK_SIZE + (x % BLOCK_SIZE) + BLOCK_THREADS;
+            i = block_base + i % BLOCK_SIZE + n * (i / BLOCK_SIZE);
+			
+		}
+	}
+}
+
 void printResult(int *G, int n){
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
@@ -174,6 +233,12 @@ void ising( int *G, double *w, int k, int n){
 
 	// Temporary pointer used for swapping gpu_G and gpu_gTemp
 	int *gpu_swapPtr;
+	
+	// GPU early exit flag
+	int *gpu_exitFlag;
+	int exitFlag = 0;
+	cudaMalloc(&gpu_exitFlag, sizeof(int));
+	cudaMemcpy(gpu_exitFlag, &exitFlag, sizeof(int), cudaMemcpyHostToDevice);
 
 	// Define grid and block dimensions - avoid using dim objects for now
 	//dim3 dimGrid(GRID_SIZE, GRID_SIZE);
@@ -192,6 +257,13 @@ void ising( int *G, double *w, int k, int n){
 		gpu_swapPtr = gpu_G;
 		gpu_G = gpu_gTemp;
 		gpu_gTemp = gpu_swapPtr;
+		
+		// Check for early exit
+		exitKernel<<<grid_size * grid_size, BLOCK_THREADS>>>(n, grid_size, gpu_G, gpu_gTemp, gpu_exitFlag);
+		cudaDeviceSynchronize();
+		cudaMemcpy(&exitFlag, gpu_exitFlag, sizeof(int), cudaMemcpyDeviceToHost);
+		if(exitFlag == 0)
+			break;
 	}
 
 	// Copy final data to CPU memory
