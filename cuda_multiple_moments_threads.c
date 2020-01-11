@@ -122,8 +122,12 @@ __global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag)
 	// Sync threads before continuing
 	__syncthreads();
 	
-	// Calculate thread id
-	int thread_id = blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + threadIdx.x;
+    // Calculate thread_id based on the coordinates of the block
+    int blockX = blockIdx.x % grid_size;
+    int blockY = blockIdx.x / grid_size;
+    int block_base = blockX * BLOCK_SIZE + blockY * n * BLOCK_SIZE;
+    //FIX: If grid is not precise, this can get out of bounds
+    int thread_id = block_base + threadIdx.x % BLOCK_SIZE + n * (threadIdx.x / BLOCK_SIZE);
 	
 	// Check if thread id is within bounds and execute
 	if(thread_id < n*n){
@@ -239,7 +243,7 @@ int main(){
 
 	// Open binary file and write contents to an array
     FILE *fptr = fopen("conf-init.bin","rb");
-    int *G = (int*)scalloc(n*n, sizeof(int));
+    int *G = (int*)calloc(n*n, sizeof(int));
     if (fptr == NULL){
         printf("Error! opening file");
         exit(1);
@@ -252,7 +256,7 @@ int main(){
 
 	// Open results binary file and write contents to an array
     FILE *fptrR = fopen("conf-1.bin","rb");
-    int *R = (int*)scalloc(n*n, sizeof(int));
+    int *R = (int*)calloc(n*n, sizeof(int));
     if (fptrR == NULL){
         printf("Error! opening file");
         exit(1);
