@@ -87,17 +87,20 @@ __global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag)
 	// Calculate thread id
 	int thread_id = blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + threadIdx.x;
 	
-	// If two values are not the same, increment the flag
-	// This is not race-condition safe but we don't care since one write is guaranteed to finish
-	if(gpu_gTemp[thread_id] == gpu_G[thread_id])
-		atomicAdd(&blockFlag, 1);
-	
-	// Sync threads before writing to global
-	__syncthreads();
-	
-	// First thread of the block writes flag back to the global memory
-	if((threadIdx.x == 0) && (blockFlag > 0))
-		atomicAdd(gpu_exitFlag, blockFlag);
+	// Check if thread id is within bounds and execute
+	if(thread_id < n*n){
+		// If two values are not the same, increment the flag
+		// This is not race-condition safe but we don't care since one write is guaranteed to finish
+		if(gpu_gTemp[thread_id] == gpu_G[thread_id])
+			blockFlag += 1;
+		
+		// Sync threads before writing to global
+		__syncthreads();
+		
+		// First thread of the block writes flag back to the global memory
+		if((threadIdx.x == 0) && (blockFlag > 0))
+			*gpu_exitFlag+=1;
+	}
 	
 }
 
