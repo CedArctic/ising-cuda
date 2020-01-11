@@ -89,6 +89,19 @@ void ising( int *G, double *w, int k, int n){
 		swapPtr = G;
 		G = gTemp;
 		gTemp = swapPtr;
+		
+		// Check if gTemp == G - if so, no point in performing more iterations
+		// Use weightSum as a boolean variable to avoid declaring another variable
+		weightSum = 0;
+		for(int k = 0; k < n*n; k++){
+			if(gTemp[k] != G[k]){
+				weightSum = 1;
+				break;
+			}
+		}
+		if(weightSum != 1)
+			break;
+		
 	}
 
 	/* If final k is odd, the current data is in the original gTemp's memory space where G (pointer) 

@@ -63,13 +63,47 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 		// Decide on what future moment should be based on temp:
 		// If positive, set to 1. If negative, to -1. If 0, leave untouched
 		if(weightSum > 0.0001)
-			gpu_gTemp[y*n+x] = 1;
+			gpu_gTemp[thread_id] = 1;
 		else if(weightSum < -0.0001)
-			gpu_gTemp[y*n+x] = -1;
+			gpu_gTemp[thread_id] = -1;
 		else
-			gpu_gTemp[y*n+x] = gpu_G[y*n+x];
+			gpu_gTemp[thread_id] = gpu_G[thread_id];
 	}
 }
+
+// Cuda kernel function used to check for early exit if G == gTemp
+__global__ void exitKernel(int n, int* gpu_G, int* gpu_gTemp, int* gpu_exitFlag){
+	
+	// Shared block exit flag
+    __shared__ int blockFlag;
+	
+	// Initialize blockFlag
+	if(threadIdx.x == 0)
+		blockFlag = 0;
+		
+	// Sync threads before continuing
+	__syncthreads();
+	
+	// Calculate thread id
+	int thread_id = blockIdx.x * BLOCK_SIZE * BLOCK_SIZE + threadIdx.x;
+	
+	// Check if thread id is within bounds and execute
+	if(thread_id < n*n){
+		// If two values are not the same, increment the flag
+		// This is not race-condition safe but we don't care since one write is guaranteed to finish
+		if(gpu_gTemp[thread_id] != gpu_G[thread_id])
+			blockFlag += 1;
+		
+		// Sync threads before writing to global
+		__syncthreads();
+		
+		// First thread of the block writes flag back to the global memory
+		if((threadIdx.x == 0) && (blockFlag > 0))
+			*gpu_exitFlag+=1;
+	}
+	
+}
+
 
 void printResult(int *G, int n){
     for(int i = 0; i < n; i++){
@@ -103,6 +137,12 @@ void ising( int *G, double *w, int k, int n){
 
 	// Temporary pointer used for swapping gpu_G and gpu_gTemp
 	int *gpu_swapPtr;
+	
+	// GPU early exit flag
+	int *gpu_exitFlag;
+	int exitFlag = 0;
+	cudaMalloc(&gpu_exitFlag, sizeof(int));
+	cudaMemcpy(gpu_exitFlag, &exitFlag, sizeof(int), cudaMemcpyHostToDevice);
 
 	// Define grid and block dimensions - disabled for now
 	//dim3 dimGrid(GRID_SIZE, GRID_SIZE);
@@ -121,6 +161,14 @@ void ising( int *G, double *w, int k, int n){
 		gpu_swapPtr = gpu_G;
 		gpu_G = gpu_gTemp;
 		gpu_gTemp = gpu_swapPtr;
+		
+		// Check for early exit
+		exitKernel<<<grid_size * grid_size, BLOCK_SIZE*BLOCK_SIZE>>>(n, gpu_G, gpu_gTemp, gpu_exitFlag);
+		cudaDeviceSynchronize();
+		cudaMemcpy(&exitFlag, gpu_exitFlag, sizeof(int), cudaMemcpyDeviceToHost);
+		if(exitFlag == 0)
+			break;
+		
 	}
 
 	// Copy final data to CPU memory
