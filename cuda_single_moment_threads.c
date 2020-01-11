@@ -37,12 +37,12 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 		// Unrolled weights calculations for this moment
 		weightSum += gpu_w[0] * gpu_G[((-2 + y + n) % n) * n + (-2 + x + n) % n];
 		weightSum += gpu_w[1] * gpu_G[((-2 + y + n) % n) * n + (-1 + x + n) % n];
-		weightSum += gpu_w[2] * gpu_G[((-2 + y + n) % n) * n + (p + n) % n];
+		weightSum += gpu_w[2] * gpu_G[((-2 + y + n) % n) * n + (x + n) % n];
 		weightSum += gpu_w[3] * gpu_G[((-2 + y + n) % n) * n + (1 + x + n) % n];
 		weightSum += gpu_w[4] * gpu_G[((-2 + y + n) % n) * n + (2 + x + n) % n];
 		weightSum += gpu_w[5] * gpu_G[((-1 + y + n) % n) * n + (-2 + x + n) % n];
 		weightSum += gpu_w[6] * gpu_G[((-1 + y + n) % n) * n + (-1 + x + n) % n];
-		weightSum += gpu_w[7] * gpu_G[((-1 + y + n) % n) * n + (p + n) % n];
+		weightSum += gpu_w[7] * gpu_G[((-1 + y + n) % n) * n + (x + n) % n];
 		weightSum += gpu_w[8] * gpu_G[((-1 + y + n) % n) * n + (1 + x + n) % n];
 		weightSum += gpu_w[9] * gpu_G[((-1 + y + n) % n) * n + (2 + x + n) % n];
 		weightSum += gpu_w[10] * gpu_G[((y + n) % n) * n + (-2 + x + n) % n];
@@ -51,12 +51,12 @@ __global__ void cudaKernel(int n, double* gpu_w, int* gpu_G, int* gpu_gTemp){
 		weightSum += gpu_w[14] * gpu_G[((y + n) % n) * n + (2 + x + n) % n];
 		weightSum += gpu_w[15] * gpu_G[((1 + y + n) % n) * n + (-2 + x + n) % n];
 		weightSum += gpu_w[16] * gpu_G[((1 + y + n) % n) * n + (-1 + x + n) % n];
-		weightSum += gpu_w[17] * gpu_G[((1 + y + n) % n) * n + (p + n) % n];
+		weightSum += gpu_w[17] * gpu_G[((1 + y + n) % n) * n + (x + n) % n];
 		weightSum += gpu_w[18] * gpu_G[((1 + y + n) % n) * n + (1 + x + n) % n];
 		weightSum += gpu_w[19] * gpu_G[((1 + y + n) % n) * n + (2 + x + n) % n];
 		weightSum += gpu_w[20] * gpu_G[((2 + y + n) % n) * n + (-2 + x + n) % n];
 		weightSum += gpu_w[21] * gpu_G[((2 + y + n) % n) * n + (-1 + x + n) % n];
-		weightSum += gpu_w[22] * gpu_G[((2 + y + n) % n) * n + (p + n) % n];
+		weightSum += gpu_w[22] * gpu_G[((2 + y + n) % n) * n + (x + n) % n];
 		weightSum += gpu_w[23] * gpu_G[((2 + y + n) % n) * n + (1 + x + n) % n];
 		weightSum += gpu_w[24] * gpu_G[((2 + y + n) % n) * n + (2 + x + n) % n];
 
